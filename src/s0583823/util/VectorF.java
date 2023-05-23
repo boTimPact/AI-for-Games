@@ -139,4 +139,12 @@ public class VectorF {
     public int hashCode() {
         return Objects.hash(x, y, z, w);
     }
+
+    @Override
+    public String toString() {
+        return "VectorF{" +
+                "x=" + x +
+                ", y=" + y +
+                '}';
+    }
 }
