@@ -21,12 +21,6 @@ public class DiveAi extends AI {
 
 
 
-    //TODO:
-    // update reflexcorner calculation
-    // obstacle List calculation update
-    // Graph from Reflexcorners
-    // A* algorithm
-
     public DiveAi(Info info) {
         super(info);
         enlistForTournament(583823);
@@ -85,8 +79,8 @@ public class DiveAi extends AI {
         float power = info.getMaxAcceleration();
 
         for (Point2D pearl: pearls) {
-            if(currentScore < info.getScore() && info.getX() >= pearl.getX() - 5 && info.getX() <= pearl.getX() + 5 && info.getY() >= pearl.getY() - 5 && info.getY() <= pearl.getY() + 5){
-                System.out.println("Pearl skipped");
+            if(currentScore < info.getScore() && info.getX() >= pearl.getX() - 9 && info.getX() <= pearl.getX() + 9 && info.getY() >= pearl.getY() - 9 && info.getY() <= pearl.getY() + 9){
+                //System.out.println("Pearl skipped");
                 pearls.remove(pearl);
                 break;
             }
@@ -118,8 +112,7 @@ public class DiveAi extends AI {
                 pearls.toArray(tmp);
                 Point2D pos = new Point2D.Float(info.getX(), info.getY());
                 sortPearlsLeftToRight();
-                if (tmp[0].distance(pos) < pearls.get(0).distance(pos) - 25)
-                    pearls = Arrays.stream(tmp).collect(Collectors.toList());
+                if (tmp[0].distance(pos) < pearls.get(0).distance(pos) - 25) pearls = Arrays.stream(tmp).collect(Collectors.toList());
             }
 
             graph.updateStartEnd(new Point2D.Float(info.getX(), info.getY()), pearls.isEmpty() ? lastPearl : pearls.get(0));
@@ -132,9 +125,8 @@ public class DiveAi extends AI {
 
     public VectorF seek(Point2D target){
         Point2D pos = new Point2D.Float(info.getX(), info.getY());
-        return new VectorF(pos, target);    //new VectorF((float) target.getX() - info.getX(), (float)target.getY() - info.getY());
+        return new VectorF(pos, target);
     }
-
 
     VectorF test;
     private float collisionRotate;
@@ -198,6 +190,7 @@ public class DiveAi extends AI {
         return collisionRotate;
     }
 
+
     public float align(VectorF targetDirection){
         float targetOrientation = - (float)Math.atan2(targetDirection.y, targetDirection.x);
         float angle = targetOrientation - info.getOrientation();
@@ -228,25 +221,41 @@ public class DiveAi extends AI {
 //        gfx.setColor(Color.BLUE);
 //        gfx.draw(info.getScene().getObstacles()[0]);
 
+        //Collision Checker
+//        gfx.setColor(Color.BLACK);
+//        VectorF direction = new VectorF((float) (5 * Math.cos(info.getOrientation())), (float) (-5 * Math.sin(info.getOrientation()))).normalize();
+//        Point2D currentPoint = new Point2D.Float(info.getX(), info.getY());
+//        for (int i = 10; i >= 0; i--) {
+//            VectorF collisionRay = direction.normalize().multiplyScalar(i);
+//            Point2D.Float collisionCheck[] = new Point2D.Float[7];
+//            for (int k = -3; k <= 3; k++) {
+//                collisionCheck[k + 3] = collisionRay.rotate2D(30 * k).addToPoint(currentPoint);
+//                gfx.fillOval((int) collisionCheck[k + 3].getX(), (int) collisionCheck[k + 3].getY(), 5,5);
+//            }
+//        }
 
+
+//        if (test != null) gfx.drawLine((int) currentPoint.getX(), (int) currentPoint.getY(), (int) test.addToPoint(currentPoint).getX(), (int) test.addToPoint(currentPoint).getY());
+
+        //ReflexCorners
         gfx.setColor(Color.RED);
         for (int i = 0; i < this.graph.reflexCorners.size() - 2; i++) {
             gfx.fillOval((int) this.graph.reflexCorners.get(i).getX() - 4, (int) this.graph.reflexCorners.get(i).getY() - 4, 10,10);
         }
 
         // Draw Star/End
-        gfx.setColor(Color.GREEN);
-        gfx.fillOval((int) (this.graph.reflexCorners.get(this.graph.reflexCorners.size()-1).getX()-5), (int) (this.graph.reflexCorners.get(this.graph.reflexCorners.size()-1).getY()-5), 10 ,10);
-        gfx.fillOval((int) (this.graph.reflexCorners.get(this.graph.reflexCorners.size()-2).getX()-5), (int) (this.graph.reflexCorners.get(this.graph.reflexCorners.size()-2).getY()-5), 10 ,10);
+//        gfx.setColor(Color.GREEN);
+//        gfx.fillOval((int) (this.graph.reflexCorners.get(this.graph.reflexCorners.size()-1).getX()-5), (int) (this.graph.reflexCorners.get(this.graph.reflexCorners.size()-1).getY()-5), 10 ,10);
+//        gfx.fillOval((int) (this.graph.reflexCorners.get(this.graph.reflexCorners.size()-2).getX()-5), (int) (this.graph.reflexCorners.get(this.graph.reflexCorners.size()-2).getY()-5), 10 ,10);
 
         //Draw Path
-        List<Integer> l = path.stream().toList();
-        Point2D p = pearls.get(0);
-        for (int i = 0; i < path.size(); i++) {
-            gfx.drawLine((int) p.getX(), (int) p.getY(), (int) graph.reflexCorners.get(l.get(i)).getX(), (int) graph.reflexCorners.get(l.get(i)).getY());
-            p = graph.reflexCorners.get(l.get(i));
-        }
-        gfx.drawLine((int) info.getX(), (int) info.getY(), (int) graph.reflexCorners.get(l.get(l.size()-1)).getX(), (int) graph.reflexCorners.get(l.get(l.size()-1)).getY());
+//        List<Integer> l = path.stream().toList();
+//        Point2D p = pearls.get(0);
+//        for (int i = 0; i < path.size(); i++) {
+//            gfx.drawLine((int) p.getX(), (int) p.getY(), (int) graph.reflexCorners.get(l.get(i)).getX(), (int) graph.reflexCorners.get(l.get(i)).getY());
+//            p = graph.reflexCorners.get(l.get(i));
+//        }
+//        gfx.drawLine((int) info.getX(), (int) info.getY(), (int) graph.reflexCorners.get(l.get(l.size()-1)).getX(), (int) graph.reflexCorners.get(l.get(l.size()-1)).getY());
 
         // Draw Graph
 //        gfx.setColor(Color.GREEN);

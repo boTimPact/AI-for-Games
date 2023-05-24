@@ -1,5 +1,6 @@
 package s0583823;
 
+
 import s0583823.util.VectorF;
 
 import javax.swing.*;
@@ -7,6 +8,7 @@ import java.awt.*;
 import java.awt.geom.*;
 import java.util.*;
 import java.util.List;
+
 
 public class Graph {
     public float graph[][];
@@ -110,18 +112,27 @@ public class Graph {
 
 
     private void calcGraph(){
+        int threadCount = Thread.activeCount();
         this.graph = new float[reflexCorners.size() + 2][reflexCorners.size() + 2];
         for (int i = 0; i < graph.length; i++) {
             Arrays.fill(graph[i], Float.POSITIVE_INFINITY);
         }
         for (int i = 0; i < graph.length - 2; i++) {
-            for (int j = i; j < graph[i].length - 2; j++) {
-                if(!isObstacleBetween(reflexCorners.get(i), reflexCorners.get(j)) && i != j){
-                    float distance = (float) reflexCorners.get(i).distance(reflexCorners.get(j));
-                    graph[i][j] = distance;
-                    graph[j][i] = distance;
-                }
+            for (int j = i + 1; j < graph[i].length - 2; j++) {
+                final int k = i;
+                final int l = j;
+                Thread thread = new Thread(() -> {
+                    if(!isObstacleBetween(reflexCorners.get(k), reflexCorners.get(l))) {
+                        float distance = (float) reflexCorners.get(k).distance(reflexCorners.get(l));
+                        graph[k][l] = distance;
+                        graph[l][k] = distance;
+                    }
+                });
+                thread.start();
             }
+        }
+        while (Thread.activeCount() > threadCount){
+            //System.out.println("Joining Threads");
         }
     }
 
@@ -143,28 +154,37 @@ public class Graph {
 
     public void addStartEnd(Point2D start, Point2D end){
         long time = System.currentTimeMillis();
+        int threadCount = Thread.activeCount();
         this.reflexCorners.add(start);
         this.reflexCorners.add(end);
-        int index = graph.length;
+        int indexStartEnd = graph.length;
         if(!isObstacleBetween(start, end)){
             float distance = (float) start.distance(end);
-            graph[index-2][index-1] = distance;
-            graph[index-1][index-2] = distance;
+            graph[indexStartEnd-2][indexStartEnd-1] = distance;
+            graph[indexStartEnd-1][indexStartEnd-2] = distance;
         }else {
             for (int i = 0; i < graph[i].length - 2; i++) {
-                if (!isObstacleBetween(start, reflexCorners.get(i))) {
-                    float distanceStart = (float) start.distance(reflexCorners.get(i));
-
-                    graph[index - 2][i] = distanceStart;
-                    graph[i][index - 2] = distanceStart;
-                }
-                if (!isObstacleBetween(end, reflexCorners.get(i))) {
-                    float distanceEnd = (float) end.distance(reflexCorners.get(i));
-
-                    graph[index - 1][i] = distanceEnd;
-                    graph[i][index - 1] = distanceEnd;
-                }
+                final int index = i;
+                Thread thread = new Thread(() -> {
+                    if (!isObstacleBetween(start, reflexCorners.get(index))) {
+                        float distance = (float) start.distance(reflexCorners.get(index));
+                        graph[indexStartEnd - 2][index] = distance;
+                        graph[index][indexStartEnd - 2] = distance;
+                    }
+                });
+                thread.start();
+                thread = new Thread(() -> {
+                    if (!isObstacleBetween(end, reflexCorners.get(index))) {
+                        float distance = (float) end.distance(reflexCorners.get(index));
+                        graph[indexStartEnd - 1][index] = distance;
+                        graph[index][indexStartEnd - 1] = distance;
+                    }
+                });
+                thread.start();
             }
+        }
+        while (Thread.activeCount() > threadCount){
+            //System.out.println("Joining Threads");
         }
         this.indexStart = graph.length - 2;
         this.indexEnd = graph.length - 1;
@@ -348,10 +368,10 @@ public class Graph {
                 g.fillOval((int) (graph.reflexCorners.get(graph.indexEnd).getX()-8), (int) (graph.reflexCorners.get(graph.indexEnd).getY()-8),16,16);
 
 
-//                for (int i = 0; i < obstaclePoints.get(0).size(); i++) {
-//                    g.setColor(new Color((float) Math.random(), (float) Math.random(), (float) Math.random()));
-//                    g.fillOval((int) obstaclePoints.get(0).get(i).getX()-5, (int) obstaclePoints.get(0).get(i).getY()-5, 10, 10);
-//                }
+                for (int i = 0; i < obstaclePoints.get(0).size(); i++) {
+                    g.setColor(new Color((float) Math.random(), (float) Math.random(), (float) Math.random()));
+                    g.fillOval((int) obstaclePoints.get(0).get(i).getX()-5, (int) obstaclePoints.get(0).get(i).getY()-5, 10, 10);
+                }
 
                 for (int i = 0; i < graph.reflexCorners.size(); i++) {
                     g.setColor(new Color((float) Math.random(), (float) Math.random(), (float) Math.random()));
