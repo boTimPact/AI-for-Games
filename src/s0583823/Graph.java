@@ -12,7 +12,8 @@ import java.util.List;
 
 public class Graph {
     public float graph[][];
-    public List<Point2D>  reflexCorners;
+    public List<Point2D> reflexCorners;
+    public List<Point2D> reflexToAir;
     Path2D obstacles[];
     List<List<Point2D>> obstaclePoints;
 
@@ -25,6 +26,7 @@ public class Graph {
     public Graph(Path2D obstacles[], int width, int height){
         this.obstacles = obstacles;
         this.reflexCorners = new LinkedList<>();
+        this.reflexToAir = new LinkedList<>();
         this.obstaclePoints = new ArrayList<>();
         this.width = width;
         this.height = height;
@@ -64,7 +66,7 @@ public class Graph {
             reflexCorners.addAll(maybeReflex);
             obstaclePoints.add(currentObstaclePoints);
         }
-
+        calcReflexToAir();
         this.calcGraph();
     }
 
@@ -96,13 +98,30 @@ public class Graph {
 
             VectorF normal = new VectorF(vec1.y, -vec1.x).normalize();
 
-            if(normal.dot(vec2) > 0 || vec1.normalize().dot(vec2.normalize()) > 0.997 && vec1.magnitude() < 50) {
+            if(normal.dot(vec2) > 0 || vec1.normalize().dot(vec2.normalize()) > 0.997) {
                 indicesRemove.add(i - count);
                 count++;
             }
         }
         for (int i: indicesRemove) {
             maybeReflex.remove(i);
+        }
+    }
+
+    private void calcReflexToAir(){
+        List<Integer> reflexUnderObstacle = new LinkedList<>();
+        List<Integer> reflexBeneathAir = new LinkedList<>();
+        for (int i = 0; i < reflexCorners.size(); i++) {
+            Point2D p = reflexCorners.get(i);
+            if (isObstacleBetween(p, new Point2D.Float((float) p.getX(), 0))){
+                reflexUnderObstacle.add(i);
+            }else{
+                reflexBeneathAir.add(i);
+            }
+        }
+        for (int i = 0; i < reflexUnderObstacle.size(); i++) {
+            if(reflexBeneathAir.contains(reflexUnderObstacle.get(i) - 1)) reflexToAir.add(reflexCorners.get(reflexUnderObstacle.get(i) - 1));
+            if(reflexBeneathAir.contains(reflexUnderObstacle.get(i) + 1)) reflexToAir.add(reflexCorners.get(reflexUnderObstacle.get(i) + 1));
         }
     }
 
@@ -136,6 +155,7 @@ public class Graph {
         }
     }
 
+
     public boolean isObstacleBetween(Point2D p1, Point2D p2){
         Line2D line = new Line2D.Float((float) p1.getX(), (float) p1.getY(), (float) p2.getX(), (float) p2.getY());
         for (int i = 0; i < obstaclePoints.size(); i++) {
@@ -162,26 +182,26 @@ public class Graph {
             float distance = (float) start.distance(end);
             graph[indexStartEnd-2][indexStartEnd-1] = distance;
             graph[indexStartEnd-1][indexStartEnd-2] = distance;
-        }else {
-            for (int i = 0; i < graph[i].length - 2; i++) {
-                final int index = i;
-                Thread thread = new Thread(() -> {
-                    if (!isObstacleBetween(start, reflexCorners.get(index))) {
-                        float distance = (float) start.distance(reflexCorners.get(index));
-                        graph[indexStartEnd - 2][index] = distance;
-                        graph[index][indexStartEnd - 2] = distance;
-                    }
-                });
-                thread.start();
-                thread = new Thread(() -> {
-                    if (!isObstacleBetween(end, reflexCorners.get(index))) {
-                        float distance = (float) end.distance(reflexCorners.get(index));
-                        graph[indexStartEnd - 1][index] = distance;
-                        graph[index][indexStartEnd - 1] = distance;
-                    }
-                });
-                thread.start();
-            }
+        }
+
+        for (int i = 0; i < graph[i].length - 2; i++) {
+            final int index = i;
+            Thread thread = new Thread(() -> {
+                if(!isObstacleBetween(start, reflexCorners.get(index))){
+                    float distance = (float) start.distance(reflexCorners.get(index));
+                    graph[indexStartEnd-2][index] = distance;
+                    graph[index][indexStartEnd-2] = distance;
+                }
+            });
+            thread.start();
+            thread = new Thread(() -> {
+                if(!isObstacleBetween(end, reflexCorners.get(index))){
+                    float distance = (float) end.distance(reflexCorners.get(index));
+                    graph[indexStartEnd-1][index] = distance;
+                    graph[index][indexStartEnd-1] = distance;
+                }
+            });
+            thread.start();
         }
         while (Thread.activeCount() > threadCount){
             //System.out.println("Joining Threads");
@@ -208,6 +228,7 @@ public class Graph {
         this.indexStart = -1;
         this.indexEnd = - 1;
     }
+
 
     public void updateStartEnd(Point2D start, Point2D end){
         this.removeStartEnd();
@@ -393,6 +414,10 @@ public class Graph {
                 g.setColor(Color.RED);
                 for (int i = 0; i < s.size()-1; i++) {
                     g.drawLine((int) graph.reflexCorners.get(s.get(i)).getX(), (int) graph.reflexCorners.get(s.get(i)).getY(), (int) graph.reflexCorners.get(s.get(i+1)).getX(), (int) graph.reflexCorners.get(s.get(i+1)).getY());
+                }
+
+                for (Point2D p: graph.reflexToAir) {
+                    g.fillOval((int) p.getX(), (int) p.getY(), 15, 15);
                 }
             }
         };

@@ -20,6 +20,12 @@ public class DiveAi extends AI {
     Graph graph;
 
 
+    //TODO:
+    // Liste aus punkten die eine direkte Verbindung zur oberfläche haben.
+    // t
+    // Statemachine for need of Air
+    // Perlen in Bereiche einteilen -> z.B. oben-links, oben-rechts, unten-links, unten-rechts
+
 
     public DiveAi(Info info) {
         super(info);
