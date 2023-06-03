@@ -111,19 +111,27 @@ public class Graph {
     private void calcReflexToAir(){
         List<Integer> reflexUnderObstacle = new LinkedList<>();
         List<Integer> reflexBeneathAir = new LinkedList<>();
+        int threadCount = Thread.activeCount();
         for (int i = 0; i < reflexCorners.size(); i++) {
-            Point2D p = reflexCorners.get(i);
-            if (isObstacleBetween(p, new Point2D.Float((float) p.getX(), 0))){
-                reflexUnderObstacle.add(i);
-            }else{
-//                reflexBeneathAir.add(i);
-                reflexToAir.add(reflexCorners.get(i));
-            }
+            final int index = i;
+            Thread thread = new Thread(() -> {
+                Point2D p = reflexCorners.get(index);
+                if (isObstacleBetween(p, new Point2D.Float((float) p.getX(), 0))) {
+                    reflexUnderObstacle.add(index);
+                } else {
+                    reflexBeneathAir.add(index);
+                    //reflexToAir.add(reflexCorners.get(index));
+                }
+            });
+            thread.start();
         }
-//        for (int i = 0; i < reflexUnderObstacle.size(); i++) {
-//            if(reflexBeneathAir.contains(reflexUnderObstacle.get(i) - 1)) reflexToAir.add(reflexCorners.get(reflexUnderObstacle.get(i) - 1));
-//            if(reflexBeneathAir.contains(reflexUnderObstacle.get(i) + 1)) reflexToAir.add(reflexCorners.get(reflexUnderObstacle.get(i) + 1));
-//        }
+        while (Thread.activeCount() > threadCount){
+            //System.out.println("Joining Threads");
+        }
+        for (int i = 0; i < reflexUnderObstacle.size(); i++) {
+            if(reflexBeneathAir.contains(reflexUnderObstacle.get(i) - 1)) reflexToAir.add(reflexCorners.get(reflexUnderObstacle.get(i) - 1));
+            if(reflexBeneathAir.contains(reflexUnderObstacle.get(i) + 1)) reflexToAir.add(reflexCorners.get(reflexUnderObstacle.get(i) + 1));
+        }
     }
 
     private boolean isInsideLevel(Point2D p){
