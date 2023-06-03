@@ -81,6 +81,10 @@ public class DiveAi extends AI {
     @Override
     public PlayerAction update() {
 
+        if(info.getAir() < info.getMaxAir() / 3){
+
+        }
+
         float angularAcceleration = avoidCollision(calcPathToTarget());
         float power = info.getMaxAcceleration();
 
@@ -126,7 +130,6 @@ public class DiveAi extends AI {
         }
         return graph.reflexCorners.get(path.peek());
     }
-
 
 
     public VectorF seek(Point2D target){
@@ -246,7 +249,13 @@ public class DiveAi extends AI {
         //ReflexCorners
         gfx.setColor(Color.RED);
         for (int i = 0; i < this.graph.reflexCorners.size() - 2; i++) {
-            gfx.fillOval((int) this.graph.reflexCorners.get(i).getX() - 4, (int) this.graph.reflexCorners.get(i).getY() - 4, 10,10);
+            gfx.fillOval((int) this.graph.reflexCorners.get(i).getX() - 5, (int) this.graph.reflexCorners.get(i).getY() - 5, 10,10);
+        }
+
+        //Reflex under Air
+        gfx.setColor(Color.ORANGE);
+        for (int i = 0; i < this.graph.reflexToAir.size(); i++) {
+            gfx.fillOval((int)this.graph.reflexToAir.get(i).getX() - 3, (int)this.graph.reflexToAir.get(i).getY() - 3, 6,6);
         }
 
         // Draw Star/End

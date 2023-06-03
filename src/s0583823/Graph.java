@@ -116,13 +116,14 @@ public class Graph {
             if (isObstacleBetween(p, new Point2D.Float((float) p.getX(), 0))){
                 reflexUnderObstacle.add(i);
             }else{
-                reflexBeneathAir.add(i);
+//                reflexBeneathAir.add(i);
+                reflexToAir.add(reflexCorners.get(i));
             }
         }
-        for (int i = 0; i < reflexUnderObstacle.size(); i++) {
-            if(reflexBeneathAir.contains(reflexUnderObstacle.get(i) - 1)) reflexToAir.add(reflexCorners.get(reflexUnderObstacle.get(i) - 1));
-            if(reflexBeneathAir.contains(reflexUnderObstacle.get(i) + 1)) reflexToAir.add(reflexCorners.get(reflexUnderObstacle.get(i) + 1));
-        }
+//        for (int i = 0; i < reflexUnderObstacle.size(); i++) {
+//            if(reflexBeneathAir.contains(reflexUnderObstacle.get(i) - 1)) reflexToAir.add(reflexCorners.get(reflexUnderObstacle.get(i) - 1));
+//            if(reflexBeneathAir.contains(reflexUnderObstacle.get(i) + 1)) reflexToAir.add(reflexCorners.get(reflexUnderObstacle.get(i) + 1));
+//        }
     }
 
     private boolean isInsideLevel(Point2D p){
