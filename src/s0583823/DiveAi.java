@@ -21,8 +21,7 @@ public class DiveAi extends AI {
 
     //TODO:
     // Liste aus punkten die eine direkte Verbindung zur oberfläche haben.
-    // t
-    // Statemachine for need of Air
+    // Testlevel: mUe0uSHXvt ckttVQiGfc
     // Perlen in Bereiche einteilen -> z.B. oben-links, oben-rechts, unten-links, unten-rechts
 
 
@@ -49,20 +48,16 @@ public class DiveAi extends AI {
 
     private void sortNearest(List<Point2D> list) {
         list.sort((p1, p2) -> {
-            double distanceP1 = Math.hypot(p1.getX() - info.getX(), p1.getY() - info.getY());
-            double distanceP2 = Math.hypot(p2.getX() - info.getX(), p2.getY() - info.getY());
+//            double distanceP1 = Math.hypot(p1.getX() - info.getX(), p1.getY() - info.getY());
+//            double distanceP2 = Math.hypot(p2.getX() - info.getX(), p2.getY() - info.getY());
+            Point2D aiPos = new Point2D.Float(info.getX(), info.getY());
 
-            return Double.compare(distanceP1, distanceP2);
+            return Double.compare(p1.distance(aiPos), p2.distance(aiPos));
         });
     }
 
     private void sortLeftToRight(List<Point2D> list){
-        list.sort((p1, p2) -> {
-            double p1X = p1.getX();
-            double p2X = p2.getX();
-
-            return  Double.compare(p1X, p2X);
-        });
+        list.sort((p1, p2) -> Double.compare(p1.getX(), p2.getX()));
     }
 
 
@@ -84,8 +79,6 @@ public class DiveAi extends AI {
     Stack<Point2D> path;
     @Override
     public PlayerAction update() {
-
-//        getPathToTarget();
 
         float angularAcceleration = avoidCollision(aiState.getNextAction());
         float power = info.getMaxAcceleration();
@@ -364,14 +357,14 @@ public class DiveAi extends AI {
         gfx.fillOval((int) (this.graph.reflexCorners.get(this.graph.reflexCorners.size()-1).getX()-5), (int) (this.graph.reflexCorners.get(this.graph.reflexCorners.size()-1).getY()-5), 10 ,10);
 
         //Draw Path
-//        gfx.setColor(Color.BLACK);
-//        List<Point2D> l = path.stream().toList();
-//        Point2D p = pearls.get(0);
-//        for (int i = 0; i < path.size(); i++) {
-//            gfx.drawLine((int) p.getX(), (int) p.getY(), (int) l.get(i).getX(), (int) l.get(i).getY());
-//            p = l.get(i);
-//        }
-//        gfx.drawLine((int) info.getX(), (int) info.getY(), (int) l.get(l.size()-1).getX(), (int) l.get(l.size()-1).getY());
+        gfx.setColor(Color.BLACK);
+        List<Point2D> l = path.stream().toList();
+        Point2D p = pearls.get(0);
+        for (int i = 0; i < path.size(); i++) {
+            gfx.drawLine((int) p.getX(), (int) p.getY(), (int) l.get(i).getX(), (int) l.get(i).getY());
+            p = l.get(i);
+        }
+        gfx.drawLine((int) info.getX(), (int) info.getY(), (int) l.get(l.size()-1).getX(), (int) l.get(l.size()-1).getY());
 
         // Draw Graph
 //        gfx.setColor(Color.GREEN);
