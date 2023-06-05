@@ -104,7 +104,7 @@ public class Graph {
 
             VectorF normal = new VectorF(vec1.y, -vec1.x).normalize();
 
-            if(normal.dot(vec2) > 0 || vec1.normalize().dot(vec2.normalize()) > 0.997) {
+            if(normal.dot(vec2) > 0 || vec1.normalize().dot(vec2.normalize()) > 0.9975) {
                 indicesRemove.add(i - count);
                 count++;
             }
@@ -145,25 +145,8 @@ public class Graph {
     }
 
     public Stack<Node> getPathToAir(Point2D aiPos){
-        Stack<Node> out = new Stack<>();
-//        if(!isObstacleBetween(aiPos, new Point2D.Float((float) aiPos.getX(), 0))){
-//            this.reflexCorners.remove(reflexCorners.size()-1);
-//            this.reflexCorners.add(new Point2D.Float((float) aiPos.getX(), 0));
-//            out.push(new Node(indexEnd, null, 0,0));
-//            return out;
-//        }
-//
-//        List<Point2D> path = reflexToAir.stream().filter((p) -> p.getY() < aiPos.getY()).sorted((p1, p2) -> {
-//            double distanceP1 = Math.hypot(p1.getX() - aiPos.getX(), p1.getY() - aiPos.getY());
-//            double distanceP2 = Math.hypot(p2.getX() - aiPos.getX(), p2.getY() - aiPos.getY());
-//
-//            return Double.compare(distanceP1, distanceP2);
-//        }).collect(Collectors.toList());
-//        if(!path.isEmpty()) {
-            updateStartEnd(aiPos, new Point2D.Float((float) aiPos.getX(), 0)); // path.get(0)
-            return findPathAStar();
-//        }
-//        return null;
+        updateStartEnd(aiPos, new Point2D.Float((float) aiPos.getX(), 0));
+        return findPathAStar();
     }
 
 
@@ -268,8 +251,10 @@ public class Graph {
 
 
     public void updateStartEnd(Point2D start, Point2D end){
+        //long time = System.currentTimeMillis();
         this.removeStartEnd();
         this.addStartEnd(start, end);
+        //System.out.println("Update Graph: " + (System.currentTimeMillis() - time) + " milliseconds");
     }
 
 
