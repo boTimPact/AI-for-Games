@@ -104,7 +104,7 @@ public class Graph {
 
             VectorF normal = new VectorF(vec1.y, -vec1.x).normalize();
 
-            if(normal.dot(vec2) > 0 || vec1.normalize().dot(vec2.normalize()) > 0.9975) {
+            if(normal.dot(vec2) > 0 || vec1.normalize().dot(vec2.normalize()) > 0.999) {
                 indicesRemove.add(i - count);
                 count++;
             }
@@ -177,6 +177,9 @@ public class Graph {
     }
 
     public boolean isObstacleBetween(Point2D p1, Point2D p2){
+        if(p1.distance(p2) > 1500) {
+            return true;
+        }
         Line2D line = new Line2D.Float((float) p1.getX(), (float) p1.getY(), (float) p2.getX(), (float) p2.getY());
         for (int i = 0; i < obstaclePoints.size(); i++) {
             for (int j = 0; j < obstaclePoints.get(i).size()-1; j++) {
@@ -251,10 +254,10 @@ public class Graph {
 
 
     public void updateStartEnd(Point2D start, Point2D end){
-        //long time = System.currentTimeMillis();
+        long time = System.currentTimeMillis();
         this.removeStartEnd();
         this.addStartEnd(start, end);
-        //System.out.println("Update Graph: " + (System.currentTimeMillis() - time) + " milliseconds");
+        System.out.println("Update Graph: " + (System.currentTimeMillis() - time) + " milliseconds");
     }
 
 

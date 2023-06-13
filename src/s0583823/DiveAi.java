@@ -1,37 +1,46 @@
 package s0583823;
 
-import lenz.htw.ai4g.ai.AI;
-import lenz.htw.ai4g.ai.DivingAction;
-import lenz.htw.ai4g.ai.Info;
-import lenz.htw.ai4g.ai.PlayerAction;
+import lenz.htw.ai4g.ai.*;
+import s0583823.util.AiState;
 import s0583823.util.VectorF;
 
 import java.awt.*;
 import java.awt.geom.*;
 import java.util.*;
 import java.util.List;
+import java.util.function.DoublePredicate;
 import java.util.stream.Collectors;
 
 
 public class DiveAi extends AI {
     private List<List<Point2D>> pearls;
+    private List<Point2D> trash;
     AiState aiState;
     private int currentScore;
     private int listIndex;
     Graph graph;
 
+    Point2D shop;
+    boolean isShopping;
+    int upgradeCount;
+    List<ShoppingItem> shoppingList;
 
     //TODO:
-    // Testlevel:
-    // mUe0uSHXvt ckttVQiGfc
     // j5q41q4BJG qqnZUchswu
     // Perlen in Bereiche einteilen -> z.B. oben-links, oben-rechts, unten-links, unten-rechts -> done: links-rechts
+    // Boot rechts oder links
+    // State: Flaschen sammeln, Upgrade kaufen
+    // Distance zwischen Perlen berechnen
 
 
+    // Testlevel:
+    // mUe0uSHXvt ckttVQiGfc
     // syiwUbOrfN QJWqL0AoAf
+    // qEPXVYGXWE WDUsoH3C7F
+    // ZvvzXnANzd eyJTdmcVcM
 
     // Report Level:
-    //ZvvzXnANzd eyJTdmcVcM
+    // saLNytLbmG
 
     public DiveAi(Info info) {
         super(info);
@@ -39,9 +48,15 @@ public class DiveAi extends AI {
         pearls = new LinkedList<>();
         listIndex = 0;
         fillPearls();
-        aiState = new AiState();
-        graph = new Graph(info.getScene().getObstacles(), info.getScene().getWidth(), info.getScene().getHeight());
+        shop = new Point2D.Float(info.getScene().getShopPosition(), 0);
+        isShopping = false;
+        upgradeCount = 0;
+        shoppingList = new LinkedList<>();
+        shoppingList.addAll(Arrays.stream(new ShoppingItem[]{ShoppingItem.MOTORIZED_FLIPPERS, ShoppingItem.BALLOON_SET, ShoppingItem.CORNER_CUTTER, ShoppingItem.STREAMLINED_WIG}).toList());
+        trash = new LinkedList<>();
+        trash.addAll(Arrays.stream(info.getScene().getRecyclingProducts()).sorted((p1, p2) -> Double.compare(p1.distance(shop), p2.distance(shop))).toList());
 
+        graph = new Graph(info.getScene().getObstacles(), info.getScene().getWidth(), info.getScene().getHeight());
         long time = System.currentTimeMillis();
         graph.calculateReflexCorner();
         System.out.println(graph.reflexCorners.size());
@@ -49,6 +64,7 @@ public class DiveAi extends AI {
 
         graph.addStartEnd(new Point2D.Float(info.getX(), info.getY()), pearls.get(listIndex).get(0));
         path = nodeToPoint2D(graph.findPathAStar());
+        aiState = new CollectTrash(0);
         currentScore = 0;
     }
 
@@ -91,6 +107,12 @@ public class DiveAi extends AI {
     Stack<Point2D> path;
     @Override
     public PlayerAction update() {
+
+        if(isShopping && upgradeCount < 2){
+            ShoppingItem item = shoppingList.remove(0);
+            upgradeCount++;
+            return new ShoppingAction(item);
+        }
 
         float angularAcceleration = avoidCollision(aiState.getNextAction());
         float power = info.getMaxAcceleration();
@@ -204,56 +226,39 @@ public class DiveAi extends AI {
 
 
 
-    public class AiState {
-        public Action swimAction;
+    public class SwimToPearl extends AiState {
 
-        public AiState(){
-            this.swimAction = Action.SwimToSurface;
+        public SwimToPearl(){
+            Point2D target = getNextTarget();
+            Stack<Graph.Node> tmp = new Stack<>();
+            path.clear();
+            Point2D tmpTarget = (Point2D) target.clone();
+
+            if(!nextTargetInReach(tmp)) {
+                tmpTarget = new Point2D.Float((float) target.getX(), 40);
+
+                graph.updateStartEnd(tmpTarget, target);
+                path = nodeToPoint2D(graph.findPathAStar());
+            }
+            graph.updateStartEnd(new Point2D.Float(info.getX(), info.getY()), tmpTarget);
+            path.addAll(nodeToPoint2D(graph.findPathAStar()));
         }
 
+        @Override
         public Point2D getNextAction(){
-            switch (swimAction){
-                case SwimToPearl:
-                    if(!hasArrivedAtTarget()) break;
+            if(!hasArrivedAtTarget()) return path.peek();
 
-                    Stack<Graph.Node> tmp = new Stack<>();
-                    if(nextTargetInReach(tmp)){
-                        path = nodeToPoint2D(tmp);
-                        break;
-                    }
-                    switchState();
-                    break;
-                case SwimToSurface:
-                    if(!hasArrivedAtSurface()) break;
-
-                    switchState();
-                    break;
+            Stack<Graph.Node> tmp = new Stack<>();
+            if(nextTargetInReach(tmp)){
+                path = nodeToPoint2D(tmp);
+                return path.peek();
             }
+            switchState();
             return path.peek();
         }
 
-
-        private void switchState() {
-            if(this.swimAction.equals(Action.SwimToPearl)) {
-                this.swimAction = Action.SwimToSurface;
-                path = nodeToPoint2D(graph.getPathToAir(new Point2D.Float(info.getX(), info.getY())));
-            }
-            else {
-                this.swimAction = Action.SwimToPearl;
-                Point2D target = getNextTarget();
-                Stack<Graph.Node> tmp = new Stack<>();
-                path.clear();
-                Point2D tmpTarget = (Point2D) target.clone();
-
-                if(!nextTargetInReach(tmp)) {
-                    tmpTarget = new Point2D.Float((float) target.getX(), 40);
-
-                    graph.updateStartEnd(tmpTarget, target);
-                    path = nodeToPoint2D(graph.findPathAStar());
-                }
-                graph.updateStartEnd(new Point2D.Float(info.getX(), info.getY()), tmpTarget);
-                path.addAll(nodeToPoint2D(graph.findPathAStar()));
-            }
+        public void switchState(){
+            aiState = new SwimToSurface(this);
         }
 
         private boolean hasArrivedAtTarget() {
@@ -283,14 +288,6 @@ public class DiveAi extends AI {
             return false;
         }
 
-        private boolean hasArrivedAtSurface() {
-            if(info.getX() >= path.peek().getX() - 9.5 && info.getX() <= path.peek().getX() + 9.5 && info.getY() >= path.peek().getY() - 9.5 && info.getY() <= path.peek().getY() + 9.5) {
-                path.pop();
-            }
-            if(info.getAir() == info.getMaxAir()) return true;
-            return false;
-        }
-
         private Point2D lastTarget;
         private Point2D getNextTarget(){
             if(pearls.get(listIndex).isEmpty()) {
@@ -301,12 +298,164 @@ public class DiveAi extends AI {
             lastTarget = pearls.get(listIndex).get(0);
             return pearls.get(listIndex).get(0);
         }
+    }
 
+    public class SwimToSurface extends AiState{
 
-        private enum Action{
-            SwimToPearl, SwimToSurface
+        AiState previous;
+        public SwimToSurface(AiState prevState){
+            previous = prevState;
+            path = nodeToPoint2D(graph.getPathToAir(new Point2D.Float(info.getX(), info.getY())));
+        }
+
+        @Override
+        public Point2D getNextAction() {
+            if(!hasArrivedAtSurface()) return path.peek();
+
+            switchState();
+            return path.peek();
+        }
+
+        public void switchState(){
+            if(previous instanceof SwimToPearl) aiState = new SwimToPearl();
+            if(previous instanceof CollectTrash) aiState = new CollectTrash(((CollectTrash) previous).indexTrash);
+        }
+
+        private boolean hasArrivedAtSurface() {
+            if(info.getX() >= path.peek().getX() - 9.5 && info.getX() <= path.peek().getX() + 9.5 && info.getY() >= path.peek().getY() - 9.5 && info.getY() <= path.peek().getY() + 9.5) {
+                path.pop();
+            }
+            if(info.getAir() == info.getMaxAir()) return true;
+            return false;
         }
     }
+
+    public class CollectTrash extends AiState{
+        int indexTrash;
+
+        public CollectTrash(int indexTrash){
+            this.indexTrash = indexTrash;
+            Point2D target = trash.get(indexTrash);
+            Stack<Graph.Node> tmp = new Stack<>();
+            path.clear();
+            Point2D tmpTarget = (Point2D) target.clone();
+
+            if(!nextTargetInReach(tmp)) {
+                tmpTarget = new Point2D.Float((float) target.getX(), 40);
+
+                graph.updateStartEnd(tmpTarget, target);
+                path = nodeToPoint2D(graph.findPathAStar());
+            }
+            graph.updateStartEnd(new Point2D.Float(info.getX(), info.getY()), tmpTarget);
+            path.addAll(nodeToPoint2D(graph.findPathAStar()));
+        }
+
+        @Override
+        public Point2D getNextAction() {
+            if(indexTrash < 4) {
+                if(!hasArrivedAtTarget()) return path.peek();
+
+                Stack<Graph.Node> tmp = new Stack<>();
+                if(nextTargetInReach(tmp)){
+                    path = nodeToPoint2D(tmp);
+                    return path.peek();
+                }
+            }
+            switchState();
+            return path.peek();
+        }
+
+        @Override
+        public void switchState() {
+            if(indexTrash >= 4) {
+                aiState = new BuyUpgrade();
+                return;
+            }
+            aiState = new SwimToSurface(this);
+        }
+
+        private boolean hasArrivedAtTarget() {
+            if(info.getX() >= path.peek().getX() - 10 && info.getX() <= path.peek().getX() + 10 && info.getY() >= path.peek().getY() - 10 && info.getY() <= path.peek().getY() + 10){
+                path.pop();
+                Point2D target = trash.get(indexTrash);
+                if(path.empty() && info.getX() >= target.getX() - 10 && info.getX() <= target.getX() + 10 && info.getY() >= target.getY() - 10 && info.getY() <= target.getY() + 10) {
+                    System.out.println("Arrived Trash");
+                    indexTrash++;
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private boolean nextTargetInReach(Stack<Graph.Node> tmp) {
+            Point2D target = trash.get(indexTrash);
+            graph.updateStartEnd(new Point2D.Float(info.getX(), info.getY()), target);
+            tmp.addAll(graph.findPathAStar());
+            if (tmp.get(0).distanceToPrev + (target.getY() - 40) < info.getAir() * 1.025) return true;
+
+            return false;
+        }
+    }
+
+    public class BuyUpgrade extends AiState{
+
+        public BuyUpgrade(){
+            Point2D target = shop;
+            Stack<Graph.Node> tmp = new Stack<>();
+            path.clear();
+            Point2D tmpTarget = (Point2D) target.clone();
+
+            if(!nextTargetInReach(tmp)) {
+                tmpTarget = new Point2D.Float((float) target.getX(), 40);
+
+                graph.updateStartEnd(tmpTarget, target);
+                path = nodeToPoint2D(graph.findPathAStar());
+            }
+            graph.updateStartEnd(new Point2D.Float(info.getX(), info.getY()), tmpTarget);
+            path.addAll(nodeToPoint2D(graph.findPathAStar()));
+        }
+
+        @Override
+        public Point2D getNextAction() {
+            if(!hasArrivedAtTarget()) return path.peek();
+
+            if(upgradeCount < 2) return new Point2D.Float(info.getX(), info.getY());
+
+            switchState();
+            return path.peek();
+        }
+
+        @Override
+        public void switchState() {
+            aiState = new SwimToPearl();
+        }
+
+        private boolean hasArrivedAtTarget() {
+            Point2D target = shop;
+            if(info.getX() >= target.getX() - 10 && info.getX() <= target.getX() + 10 && info.getY() >= target.getY() - 10 && info.getY() <= target.getY() + 10) {
+                System.out.println("Arrived Shop");
+                isShopping = true;
+                return true;
+            }
+            if(info.getX() >= path.peek().getX() - 10 && info.getX() <= path.peek().getX() + 10 && info.getY() >= path.peek().getY() - 10 && info.getY() <= path.peek().getY() + 10){
+                if(!path.empty()) path.pop();
+            }
+            return false;
+        }
+
+        private boolean nextTargetInReach(Stack<Graph.Node> tmp) {
+            Point2D target = shop;
+            graph.updateStartEnd(new Point2D.Float(info.getX(), info.getY()), target);
+            tmp.addAll(graph.findPathAStar());
+            if(currentScore < 9) {
+                if (tmp.get(0).distanceToPrev + (target.getY() - 40) < info.getAir() * 1.025) return true;
+            }else {
+                if (tmp.get(0).distanceToPrev < info.getAir()) return true;
+            }
+            return false;
+        }
+    }
+
 
     //TODO:
 //    public void hasEnoughAir(float distancePearl, double pearlPosY){
@@ -357,10 +506,10 @@ public class DiveAi extends AI {
 //        if (test != null) gfx.drawLine((int) currentPoint.getX(), (int) currentPoint.getY(), (int) test.addToPoint(currentPoint).getX(), (int) test.addToPoint(currentPoint).getY());
 
         //ReflexCorners
-//        gfx.setColor(Color.RED);
-//        for (int i = 0; i < this.graph.reflexCorners.size() - 2; i++) {
-//            gfx.fillOval((int) this.graph.reflexCorners.get(i).getX() - 5, (int) this.graph.reflexCorners.get(i).getY() - 5, 10,10);
-//        }
+        gfx.setColor(Color.RED);
+        for (int i = 0; i < this.graph.reflexCorners.size() - 2; i++) {
+            gfx.fillOval((int) this.graph.reflexCorners.get(i).getX() - 5, (int) this.graph.reflexCorners.get(i).getY() - 5, 10,10);
+        }
 
         //Reflex under Air
 //        gfx.setColor(Color.ORANGE);
@@ -369,9 +518,9 @@ public class DiveAi extends AI {
 //        }
 
         // Draw Star/End
-        gfx.setColor(Color.GREEN);
-        gfx.fillOval((int) (this.graph.reflexCorners.get(this.graph.reflexCorners.size()-2).getX()-5), (int) (this.graph.reflexCorners.get(this.graph.reflexCorners.size()-2).getY()-5), 10 ,10);
-        gfx.fillOval((int) (this.graph.reflexCorners.get(this.graph.reflexCorners.size()-1).getX()-5), (int) (this.graph.reflexCorners.get(this.graph.reflexCorners.size()-1).getY()-5), 10 ,10);
+//        gfx.setColor(Color.GREEN);
+//        gfx.fillOval((int) (this.graph.reflexCorners.get(this.graph.reflexCorners.size()-2).getX()-5), (int) (this.graph.reflexCorners.get(this.graph.reflexCorners.size()-2).getY()-5), 10 ,10);
+//        gfx.fillOval((int) (this.graph.reflexCorners.get(this.graph.reflexCorners.size()-1).getX()-5), (int) (this.graph.reflexCorners.get(this.graph.reflexCorners.size()-1).getY()-5), 10 ,10);
 
         //Draw Path
         gfx.setColor(Color.BLACK);
