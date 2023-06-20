@@ -52,7 +52,7 @@ public class DiveAi extends AI {
         isShopping = false;
         upgradeCount = 0;
         shoppingList = new LinkedList<>();
-        shoppingList.addAll(Arrays.stream(new ShoppingItem[]{ShoppingItem.MOTORIZED_FLIPPERS, ShoppingItem.BALLOON_SET, ShoppingItem.CORNER_CUTTER, ShoppingItem.STREAMLINED_WIG}).toList());
+        shoppingList.addAll(Arrays.stream(new ShoppingItem[]{ShoppingItem.STREAMLINED_WIG, ShoppingItem.BALLOON_SET, ShoppingItem.CORNER_CUTTER, ShoppingItem.MOTORIZED_FLIPPERS}).toList());
         trash = new LinkedList<>();
         trash.addAll(Arrays.stream(info.getScene().getRecyclingProducts()).sorted((p1, p2) -> Double.compare(p1.distance(shop), p2.distance(shop))).toList());
 
@@ -406,7 +406,7 @@ public class DiveAi extends AI {
             Point2D tmpTarget = (Point2D) target.clone();
 
             if(!nextTargetInReach(tmp)) {
-                tmpTarget = new Point2D.Float((float) target.getX(), 40);
+                tmpTarget = new Point2D.Float(info.getX(), 40);
 
                 graph.updateStartEnd(tmpTarget, target);
                 path = nodeToPoint2D(graph.findPathAStar());
@@ -447,11 +447,9 @@ public class DiveAi extends AI {
             Point2D target = shop;
             graph.updateStartEnd(new Point2D.Float(info.getX(), info.getY()), target);
             tmp.addAll(graph.findPathAStar());
-            if(currentScore < 9) {
-                if (tmp.get(0).distanceToPrev + (target.getY() - 40) < info.getAir() * 1.025) return true;
-            }else {
-                if (tmp.get(0).distanceToPrev < info.getAir()) return true;
-            }
+            System.out.println("Pos: " + new Point2D.Float(info.getX(), info.getY()) + " Target: " + target + " Distance: " + tmp.get(0).distanceToPrev + " Air: " + info.getAir());
+            if (tmp.get(0).distanceToPrev + target.getY() < info.getAir()) return true;
+
             return false;
         }
     }
@@ -518,9 +516,9 @@ public class DiveAi extends AI {
 //        }
 
         // Draw Star/End
-//        gfx.setColor(Color.GREEN);
-//        gfx.fillOval((int) (this.graph.reflexCorners.get(this.graph.reflexCorners.size()-2).getX()-5), (int) (this.graph.reflexCorners.get(this.graph.reflexCorners.size()-2).getY()-5), 10 ,10);
-//        gfx.fillOval((int) (this.graph.reflexCorners.get(this.graph.reflexCorners.size()-1).getX()-5), (int) (this.graph.reflexCorners.get(this.graph.reflexCorners.size()-1).getY()-5), 10 ,10);
+        gfx.setColor(Color.GREEN);
+        gfx.fillOval((int) (this.graph.reflexCorners.get(this.graph.reflexCorners.size()-2).getX()-5), (int) (this.graph.reflexCorners.get(this.graph.reflexCorners.size()-2).getY()-5), 10 ,10);
+        gfx.fillOval((int) (this.graph.reflexCorners.get(this.graph.reflexCorners.size()-1).getX()-5), (int) (this.graph.reflexCorners.get(this.graph.reflexCorners.size()-1).getY()-5), 10 ,10);
 
         //Draw Path
         gfx.setColor(Color.BLACK);
