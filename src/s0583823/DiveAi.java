@@ -17,6 +17,7 @@ public class DiveAi extends AI {
     private List<Point2D> trash;
     AiState aiState;
     private int currentScore;
+    private int indexTrash;
     private int listIndex;
     Graph graph;
 
@@ -64,8 +65,9 @@ public class DiveAi extends AI {
 
         graph.addStartEnd(new Point2D.Float(info.getX(), info.getY()), pearls.get(listIndex).get(0));
         path = nodeToPoint2D(graph.findPathAStar());
-        aiState = new CollectTrash(0);
+        aiState = new CollectTrash();
         currentScore = 0;
+        indexTrash = 0;
     }
 
     private void fillPearls(){
@@ -318,7 +320,7 @@ public class DiveAi extends AI {
 
         public void switchState(){
             if(previous instanceof SwimToPearl) aiState = new SwimToPearl();
-            if(previous instanceof CollectTrash) aiState = new CollectTrash(((CollectTrash) previous).indexTrash);
+            if(previous instanceof CollectTrash) aiState = new CollectTrash();
         }
 
         private boolean hasArrivedAtSurface() {
@@ -331,11 +333,9 @@ public class DiveAi extends AI {
     }
 
     public class CollectTrash extends AiState{
-        int indexTrash;
 
-        public CollectTrash(int indexTrash){
-            this.indexTrash = indexTrash;
-            Point2D target = trash.get(indexTrash);
+        public CollectTrash(){
+            Point2D target = trash.get(0);
             Stack<Graph.Node> tmp = new Stack<>();
             path.clear();
             Point2D tmpTarget = (Point2D) target.clone();
@@ -352,7 +352,7 @@ public class DiveAi extends AI {
 
         @Override
         public Point2D getNextAction() {
-            if(indexTrash < 4) {
+            if(info.getMoney() < 4) {
                 if(!hasArrivedAtTarget()) return path.peek();
 
                 Stack<Graph.Node> tmp = new Stack<>();
@@ -367,7 +367,7 @@ public class DiveAi extends AI {
 
         @Override
         public void switchState() {
-            if(indexTrash >= 4) {
+            if(info.getMoney() >= 4) {
                 aiState = new BuyUpgrade();
                 return;
             }
@@ -377,10 +377,10 @@ public class DiveAi extends AI {
         private boolean hasArrivedAtTarget() {
             if(info.getX() >= path.peek().getX() - 10 && info.getX() <= path.peek().getX() + 10 && info.getY() >= path.peek().getY() - 10 && info.getY() <= path.peek().getY() + 10){
                 path.pop();
-                Point2D target = trash.get(indexTrash);
+                Point2D target = getNextTarget();
                 if(path.empty() && info.getX() >= target.getX() - 10 && info.getX() <= target.getX() + 10 && info.getY() >= target.getY() - 10 && info.getY() <= target.getY() + 10) {
                     System.out.println("Arrived Trash");
-                    indexTrash++;
+                    trash.remove(0);
                     return true;
                 }
             }
@@ -388,12 +388,24 @@ public class DiveAi extends AI {
         }
 
         private boolean nextTargetInReach(Stack<Graph.Node> tmp) {
-            Point2D target = trash.get(indexTrash);
+            Point2D target = getNextTarget();
             graph.updateStartEnd(new Point2D.Float(info.getX(), info.getY()), target);
             tmp.addAll(graph.findPathAStar());
             if (tmp.get(0).distanceToPrev + (target.getY() - 40) < info.getAir() * 1.025) return true;
 
             return false;
+        }
+
+        private Point2D lastTarget;
+        private Point2D getNextTarget(){
+            if(!trash.isEmpty()) {
+                if(indexTrash == trash.size()) return lastTarget;
+                indexTrash++;
+            }
+            Point2D pos = new Point2D.Float(info.getX(), info.getY());
+            trash.sort((p1, p2) -> Double.compare(p1.distance(pos), p2.distance(pos)));
+            lastTarget = trash.get(0);
+            return trash.get(0);
         }
     }
 
