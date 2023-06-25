@@ -8,7 +8,6 @@ import java.awt.*;
 import java.awt.geom.*;
 import java.util.*;
 import java.util.List;
-import java.util.function.DoublePredicate;
 import java.util.stream.Collectors;
 
 
@@ -30,7 +29,6 @@ public class DiveAi extends AI {
     // j5q41q4BJG qqnZUchswu
     // Perlen in Bereiche einteilen -> z.B. oben-links, oben-rechts, unten-links, unten-rechts -> done: links-rechts
     // Boot rechts oder links
-    // State: Flaschen sammeln, Upgrade kaufen
     // Distance zwischen Perlen berechnen
 
 
@@ -40,6 +38,8 @@ public class DiveAi extends AI {
     // qEPXVYGXWE WDUsoH3C7F
     // ZvvzXnANzd eyJTdmcVcM
 
+    //gaapcBonVv lG6CDRpC27
+
     // Report Level:
     // saLNytLbmG
 
@@ -48,8 +48,8 @@ public class DiveAi extends AI {
         enlistForTournament(583823);
         pearls = new LinkedList<>();
         listIndex = 0;
-        fillPearls();
         shop = new Point2D.Float(info.getScene().getShopPosition(), 0);
+        fillPearls();
         isShopping = false;
         upgradeCount = 0;
         shoppingList = new LinkedList<>();
@@ -74,9 +74,13 @@ public class DiveAi extends AI {
         pearls.add(Arrays.stream(info.getScene().getPearl()).filter(p -> p.getX() < info.getScene().getWidth()/2.).sorted((e1, e2) -> Double.compare(e2.getY(), e1.getY())).collect(Collectors.toList()));
         pearls.add(Arrays.stream(info.getScene().getPearl()).filter(p -> p.getX() >= info.getScene().getWidth()/2.).sorted((e1, e2) -> Double.compare(e2.getY(), e1.getY())).collect(Collectors.toList()));
 
-        pearls.sort((l1, l2) -> {
-            return Double.compare(l1.get(0).getY(), l2.get(0).getY());
-        });
+
+        if(shop.getX() > info.getScene().getWidth() / 2.){
+            Collections.reverse(pearls);
+        }
+//        pearls.sort((l1, l2) -> {
+//            return Double.compare(l1.get(0).getY(), l2.get(0).getY());
+//        });
     }
 
     private void sortNearest(List<Point2D> list) {
@@ -121,7 +125,7 @@ public class DiveAi extends AI {
         for (List<Point2D> l: pearls) {
             for (Point2D pearl: l) {
                 if(currentScore < info.getScore() && info.getX() >= pearl.getX() - 8 && info.getX() <= pearl.getX() + 8 && info.getY() >= pearl.getY() - 8 && info.getY() <= pearl.getY() + 8){
-                    System.out.println("Pearl skipped");
+//                    System.out.println("Pearl skipped");
                     pearls.remove(pearl);
                     break;
                 }
@@ -205,6 +209,7 @@ public class DiveAi extends AI {
     public float align(VectorF targetDirection){
         float targetOrientation = - (float)Math.atan2(targetDirection.y, targetDirection.x);
         float angle = targetOrientation - info.getOrientation();
+        angle = angle > 180 ? 180 - angle : angle;
         if(Math.abs(angle) < 0.001f) return 0;
         if(Math.abs(angle) < 0.2f){
             return ((angle * info.getMaxAbsoluteAngularVelocity()) / 0.2f) - info.getAngularVelocity();
@@ -333,9 +338,10 @@ public class DiveAi extends AI {
     }
 
     public class CollectTrash extends AiState{
+        private static int count = 0;
 
         public CollectTrash(){
-            Point2D target = trash.get(0);
+            Point2D target = count++ > 0 ? getNextTarget() : trash.get(0);
             Stack<Graph.Node> tmp = new Stack<>();
             path.clear();
             Point2D tmpTarget = (Point2D) target.clone();
@@ -460,27 +466,12 @@ public class DiveAi extends AI {
             graph.updateStartEnd(new Point2D.Float(info.getX(), info.getY()), target);
             tmp.addAll(graph.findPathAStar());
             System.out.println("Pos: " + new Point2D.Float(info.getX(), info.getY()) + " Target: " + target + " Distance: " + tmp.get(0).distanceToPrev + " Air: " + info.getAir());
-            if (tmp.get(0).distanceToPrev + target.getY() < info.getAir()) return true;
+            if (tmp.get(0).distanceToPrev + target.getY() - 40 < info.getAir() * 1.025) return true;
 
             return false;
         }
     }
 
-
-    //TODO:
-//    public void hasEnoughAir(float distancePearl, double pearlPosY){
-//        System.out.println("Distance: " + (distancePearl + pearlPosY) + "\tAir: " + info.getAir());
-//        if((distancePearl + pearlPosY) > info.getAir() * 1.05){
-//
-//        }
-//    }
-//
-//    public boolean airReplenished(int air){
-//        if(air == info.getMaxAir()){
-//
-//        }
-//
-//    }
 
 
     private Stack<Point2D> nodeToPoint2D(Stack<Graph.Node> s){
@@ -572,5 +563,11 @@ public class DiveAi extends AI {
 //                gfx.fillOval((int) (p.getX()-5), (int) (p.getY()-5),10,10);
 //            }
 //        }
+
+
+        //Draw Fish
+//        gfx.setColor(Color.GREEN);
+//        Point2D fish = info.getScene().getFish()[0];
+//        gfx.fillOval((int) fish.getX() - 5, (int) fish.getY() - 5, 10,10);
     }
 }

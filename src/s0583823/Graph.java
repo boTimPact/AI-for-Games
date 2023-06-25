@@ -177,7 +177,7 @@ public class Graph {
     }
 
     public boolean isObstacleBetween(Point2D p1, Point2D p2){
-        if(p1.distance(p2) > 1500) {
+        if(p1.distance(p2) > 1300) {
             return true;
         }
         Line2D line = new Line2D.Float((float) p1.getX(), (float) p1.getY(), (float) p2.getX(), (float) p2.getY());
