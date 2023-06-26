@@ -39,6 +39,7 @@ public class DiveAi extends AI {
     // syiwUbOrfN QJWqL0AoAf
     // qEPXVYGXWE WDUsoH3C7F
     // ZvvzXnANzd eyJTdmcVcM
+    // VzdAIyjkg3 2jqDc50Fuv
 
     // Report Level:
     // saLNytLbmG
@@ -48,8 +49,8 @@ public class DiveAi extends AI {
         enlistForTournament(583823);
         pearls = new LinkedList<>();
         listIndex = 0;
-        fillPearls();
         shop = new Point2D.Float(info.getScene().getShopPosition(), 0);
+        fillPearls();
         isShopping = false;
         upgradeCount = 0;
         shoppingList = new LinkedList<>();
@@ -74,9 +75,9 @@ public class DiveAi extends AI {
         pearls.add(Arrays.stream(info.getScene().getPearl()).filter(p -> p.getX() < info.getScene().getWidth()/2.).sorted((e1, e2) -> Double.compare(e2.getY(), e1.getY())).collect(Collectors.toList()));
         pearls.add(Arrays.stream(info.getScene().getPearl()).filter(p -> p.getX() >= info.getScene().getWidth()/2.).sorted((e1, e2) -> Double.compare(e2.getY(), e1.getY())).collect(Collectors.toList()));
 
-        pearls.sort((l1, l2) -> {
-            return Double.compare(l1.get(0).getY(), l2.get(0).getY());
-        });
+        if(shop.getX() > info.getScene().getWidth() / 2){
+            Collections.reverse(pearls);
+        }
     }
 
     private void sortNearest(List<Point2D> list) {
@@ -208,6 +209,9 @@ public class DiveAi extends AI {
         if(Math.abs(angle) < 0.001f) return 0;
         if(Math.abs(angle) < 0.2f){
             return ((angle * info.getMaxAbsoluteAngularVelocity()) / 0.2f) - info.getAngularVelocity();
+        }
+        if(angle > 180){
+            angle = 180 -angle;
         }
         return Math.signum(angle) * info.getMaxAbsoluteAngularVelocity() - info.getAngularVelocity();
     }

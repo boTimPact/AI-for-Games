@@ -104,7 +104,7 @@ public class Graph {
 
             VectorF normal = new VectorF(vec1.y, -vec1.x).normalize();
 
-            if(normal.dot(vec2) > 0 || vec1.normalize().dot(vec2.normalize()) > 0.999) {
+            if(normal.dot(vec2) > 0 || vec1.normalize().dot(vec2.normalize()) > 0.9992) {
                 indicesRemove.add(i - count);
                 count++;
             }
@@ -239,10 +239,8 @@ public class Graph {
         this.reflexCorners.remove(reflexCorners.size()-1);
         int index = graph.length;
 
-        float tmp[] = new float[index];
-        Arrays.fill(tmp, Float.POSITIVE_INFINITY);
-        graph[index-1] = tmp.clone();
-        graph[index-2] = tmp.clone();
+        Arrays.fill(graph[index-1], Float.POSITIVE_INFINITY);
+        Arrays.fill(graph[index-2], Float.POSITIVE_INFINITY);
 
         for (int i = 0; i < graph.length; i++) {
             graph[i][index-1] = Float.POSITIVE_INFINITY;
