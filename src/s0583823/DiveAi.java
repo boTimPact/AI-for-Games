@@ -32,6 +32,7 @@ public class DiveAi extends AI {
     // Boot rechts oder links
     // State: Flaschen sammeln, Upgrade kaufen
     // Distance zwischen Perlen berechnen
+    // Strömung: 1.5 pixel/sekunde
 
 
     // Testlevel:
