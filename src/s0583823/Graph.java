@@ -355,6 +355,7 @@ public class Graph {
 
     // Debugging/Testing
     public static void main(String[] args) {
+
         Path2D path1 = new Path2D.Float();
         path1.moveTo(250,500);
         path1.lineTo(350,400);

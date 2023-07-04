@@ -2,12 +2,16 @@ package s0583823;
 
 import lenz.htw.ai4g.ai.*;
 import s0583823.util.AiState;
+import s0583823.util.FishTracker;
 import s0583823.util.VectorF;
 
 import java.awt.*;
 import java.awt.geom.*;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 
@@ -25,10 +29,16 @@ public class DiveAi extends AI {
     int upgradeCount;
     List<ShoppingItem> shoppingList;
 
+
+    private FishTracker fishTracker;
+    private Future isTrackerReady;
+    private ExecutorService service;
+
     //TODO:
     // j5q41q4BJG qqnZUchswu
     // Perlen in Bereiche einteilen -> z.B. oben-links, oben-rechts, unten-links, unten-rechts -> done: links-rechts
     // Boot rechts oder links
+    // Pfadlänge zur Oberfläche berechnen!!!
     // Distance zwischen Perlen berechnen
 
 
@@ -68,6 +78,10 @@ public class DiveAi extends AI {
         aiState = new CollectTrash();
         currentScore = 0;
         indexTrash = 0;
+
+        fishTracker = new FishTracker(info, graph);
+        service = Executors.newFixedThreadPool(1);
+        isTrackerReady = service.submit(fishTracker);
     }
 
     private void fillPearls(){
@@ -113,6 +127,11 @@ public class DiveAi extends AI {
     Stack<Point2D> path;
     @Override
     public PlayerAction update() {
+//        if(isTrackerReady.isDone()){
+//            if(!service.isShutdown()){
+//                service.shutdown();
+//            }
+//        }
 
         if(isShopping && upgradeCount < 2){
             ShoppingItem item = shoppingList.remove(0);
