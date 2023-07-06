@@ -20,7 +20,7 @@ Behandelte Themen:
 _English version_
 ## This project was created as part of the course AI for Games
 
-In the practical part of the course the learned material had to be implemented. The task was to program my own AI for a [Game](#Results) provided by the professor, which collects all pearls in a certain time<br>.
+In the practical part of the course the learned material had to be implemented. The task was to program my own AI for a [Game](#Results) provided by the professor, which collects all pearls in a certain time.<br>
 _**The jar file for the game is not included**_
 
 Topics Covered:
