@@ -55,3 +55,7 @@ Topics Covered:
 <br>
 *More Obstacles: Streams*
 ![image](https://github.com/boTimPact/AI-for-Games/assets/119596476/00cd26b9-36bd-45e0-8431-db4e201e7db7)
+<br>
+<br>
+*Reflexcorner visualization*
+![image](https://github.com/boTimPact/AI-for-Games/assets/119596476/04d2a5d2-39a5-4c0f-b71b-2ecbf2be6290)
