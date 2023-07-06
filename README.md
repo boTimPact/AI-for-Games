@@ -9,8 +9,8 @@ _**Die Jar Datei für das Spiel ist nicht enthalten**_
 Behandelte Themen:
 - Steering Behaviors
 - Graphen und Wegesuche
-- Entscheidungsbäume, Zustandsautomaten & ExpertensystemeDatei
-- Fuzzy LogicDatei
+- Entscheidungsbäume, Zustandsautomaten & Expertensysteme
+- Fuzzy Logic
 - Wegpunkte
 - Goal-oriented Behavior
 - Neuronale Netze (hier nicht enthalten)
@@ -26,8 +26,8 @@ _**The jar file for the game is not included**_
 Topics Covered:
 - Steering Behaviors
 - Graphs and Pathfinding
-- Decision Trees, State Machines & Expert SystemsFile
-- Fuzzy LogicFile
+- Decision Trees, State Machines & Expert Systems
+- Fuzzy Logic
 - Wegpunkte
 - Goal-oriented Behavior
 - Neural Networks (not included here)
