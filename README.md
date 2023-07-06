@@ -3,7 +3,7 @@ _English version below_
 
 ## Dieses Projekt ist im Zuge des Kurses AI for Games entstanden
 
-Im Praxisteil der Veranstaltung mussten der gelernte Stoff implementiert werden. Aufagabe war es, für ein vom Professor bereitgestelltem [Spiel](## Results) eine eigene KI zu <br>
+Im Praxisteil der Veranstaltung mussten der gelernte Stoff implementiert werden. Aufagabe war es, für ein vom Professor bereitgestelltem [Spiel](#Results) eine eigene KI zu <br>
 _****_
 
 Behandelte Themen:
