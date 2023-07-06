@@ -25,5 +25,5 @@ Covered Topics:
 <br>
 <br>
 
-##Results:
+## Results:
 ![image](https://github.com/boTimPact/AI-for-Games/assets/119596476/a0b4d761-109a-497d-8138-384773377a34)
