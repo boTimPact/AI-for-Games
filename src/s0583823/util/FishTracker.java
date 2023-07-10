@@ -3,75 +3,129 @@ package s0583823.util;
 import lenz.htw.ai4g.ai.Info;
 import s0583823.Graph;
 
+import javax.swing.*;
+import java.awt.*;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Line2D;
+import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-public class FishTracker implements Runnable{
+public class FishTracker{
     private Info info;
-    private Graph graph;
+    public List<FishInfo> fishInfos;
+    public Map<Integer, Line2D> fishPaths;
+    private int fishCount;
+    public boolean isDone;
 
-    public FishTracker(Info info, Graph graph){
+    public FishTracker(Info info){
         this.info = info;
-        this.graph = graph;
-    }
-
-    @Override
-    public void run() {
-        int fishCount = info.getScene().getFish().length;
-        ExecutorService service = Executors.newFixedThreadPool(fishCount);
-        List< Future > tasks = new ArrayList<>();
+        fishInfos = new LinkedList<>();
+        fishPaths = new HashMap<>();
+        fishCount = info.getScene().getFish().length;
+        isDone = false;
 
         for (int i = 0; i < fishCount; i++) {
-            tasks.add(service.submit(new FishInfo(i)));
-        }
-
-        for (Future future:tasks) {
-            try {
-                future.get();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
+            fishInfos.add(new FishInfo(i));
         }
     }
 
-    private class FishInfo implements Runnable{
+    public void update() {
+        int check = 0;
+        for (FishInfo info: fishInfos) {
+            if(info.notDone) {
+                info.track();
+                continue;
+            }else {
+                info.trackDirection();
+            }
+            if(fishPaths.containsKey(info.fishIndex)) {
+                fishPaths.put(info.fishIndex, new Line2D.Float(info.maxLeft, (float) info.lastPos.getY(), info.maxRight, (float) info.lastPos.getY()));
+                continue;
+            }
+            check++;
+        }
+        if(check == fishCount) isDone = true;
+    }
+
+
+    public float fishPosOnPlayerArrival(int arriveTime, int fishIndex){
+        if (fishInfos.get(fishIndex).isSwimmingRight){
+            float pos = (float) info.getScene().getFish()[fishIndex].getX() + arriveTime;
+            return pos < fishInfos.get(fishIndex).maxRight ? pos : fishInfos.get(fishIndex).maxRight - (pos - fishInfos.get(fishIndex).maxRight);
+        }
+
+        float pos = (float) info.getScene().getFish()[fishIndex].getX() - arriveTime;
+        return pos > fishInfos.get(fishIndex).maxLeft ? pos : fishInfos.get(fishIndex).maxLeft + (fishInfos.get(fishIndex).maxLeft - pos);
+    }
+
+
+
+    public class FishInfo{
 
         int fishIndex;
-        Point2D startPos;
-        double maxLeft;
-        double maxRight;
+        public Point2D lastPos;
+        public float maxLeft;
+        public float maxRight;
+        public boolean notDone;
 
         public FishInfo(int fishIndex){
             this.fishIndex = fishIndex;
-            startPos = info.getScene().getFish()[fishIndex];
-            maxLeft = startPos.getX();
-            maxRight = startPos.getX();
+            notDone = true;
         }
 
-        @Override
-        public void run() {
-            boolean hasArrivedLeft = false;
-            boolean hasArrivedRight = false;
-            Boolean isSwimmingRight = null;
+        boolean hasArrivedLeft = false;
+        boolean hasArrivedRight = false;
+        boolean isSwimmingRight;
+        boolean lastState;
+        int counter = 0;
+        private void track() {
 
-            while (!hasArrivedLeft && !hasArrivedRight){
+            if(counter <  1) {
+                counter++;
+                lastPos = info.getScene().getFish()[fishIndex].getLocation();
+                return;
+            }
+            if(counter == 1) {
+                counter++;
+                isSwimmingRight = info.getScene().getFish()[fishIndex].getX() > lastPos.getX();
+            }
 
-                maxRight = Math.max(maxRight, info.getScene().getFish()[fishIndex].getX());
-                maxLeft = Math.min(maxLeft, info.getScene().getFish()[fishIndex].getX());
-
-                if(isSwimmingRight == null) isSwimmingRight = maxRight > startPos.getX();
-
-                if(isSwimmingRight){
-                    hasArrivedRight = info.getScene().getFish()[fishIndex].getX() < maxRight;
-                }else {
-                    hasArrivedLeft = info.getScene().getFish()[fishIndex].getX() > maxLeft;
+            if(isSwimmingRight){
+                if(lastPos.getX() > info.getScene().getFish()[fishIndex].getX()){
+                    maxRight = (float) lastPos.getX();
+                    hasArrivedRight = true;
+                    isSwimmingRight = !isSwimmingRight;
+//                    System.out.println("Change Direction");
+                }
+            }else {
+                if(lastPos.getX() < info.getScene().getFish()[fishIndex].getX()){
+                    maxLeft = (float) lastPos.getX();
+                    hasArrivedLeft = true;
+                    isSwimmingRight = !isSwimmingRight;
+//                    System.out.println("Change Direction");
                 }
             }
 
+            if(hasArrivedRight && hasArrivedLeft) notDone = false;
+            lastPos = info.getScene().getFish()[fishIndex].getLocation();
+            //lastState = isSwimmingRight;
+        }
+
+        private void trackDirection(){
+            if(isSwimmingRight){
+                if(maxRight == info.getScene().getFish()[fishIndex].getX()){
+                    isSwimmingRight = !isSwimmingRight;
+                }
+            }else {
+                if(maxLeft ==  info.getScene().getFish()[fishIndex].getX()){
+                    isSwimmingRight = !isSwimmingRight;
+                }
+            }
         }
     }
 }

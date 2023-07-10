@@ -6,9 +6,9 @@ import s0583823.util.VectorF;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.*;
+import java.lang.reflect.Array;
 import java.util.*;
 import java.util.List;
-import java.util.stream.Collectors;
 
 
 public class Graph {
@@ -17,6 +17,7 @@ public class Graph {
     public List<Point2D> reflexToAir;
     Path2D obstacles[];
     List<List<Point2D>> obstaclePoints;
+    List<Rectangle2D> streams;
 
     public int indexStart;
     public int indexEnd;
@@ -24,13 +25,14 @@ public class Graph {
     private int width;
     private int height;
 
-    public Graph(Path2D obstacles[], int width, int height){
+    public Graph(Path2D obstacles[], int width, int height, List<Rectangle2D> streams){
         this.obstacles = obstacles;
         this.reflexCorners = new LinkedList<>();
         this.reflexToAir = new LinkedList<>();
         this.obstaclePoints = new ArrayList<>();
         this.width = width;
         this.height = height;
+        this.streams = streams;
     }
 
 
@@ -69,6 +71,7 @@ public class Graph {
             obstaclePoints.add(currentObstaclePoints);
         }
         this.calcReflexToAir();
+        this.insertStreamCorners();
         this.calcGraph();
     }
 
@@ -150,8 +153,66 @@ public class Graph {
     }
 
 
+    public void insertStreamCorners(){
+        int cornerSize = reflexCorners.size();
+        List<Point2D> streamCorners = new ArrayList<>();
+        for (Rectangle2D rect: streams) {
+            Point2D[] points = new Point2D[4];
+            points[0] = new Point2D.Float((float) rect.getMinX() - 5, (float) rect.getMinY() - 5);
+            points[1] = new Point2D.Float((float) rect.getMaxX() + 5, (float) rect.getMinY() - 5);
+            points[2] = new Point2D.Float((float) rect.getMaxX() + 5, (float) rect.getMaxY() + 5);
+            points[3] = new Point2D.Float((float) rect.getMinX() - 5, (float) rect.getMaxY() + 5);
 
-    private void calcGraph(){
+            for (int i = 0; i < points.length; i++) {
+                if(isInsideLevel(points[i])){
+                    boolean inObstacle = false;
+                    for (int j = 0; j < obstacles.length; j++) {
+                        if(obstacles[j].contains(points[i])){
+                            inObstacle = true;
+                        }
+                    }
+                    if(!inObstacle){
+                        streamCorners.add(points[i]);
+                        reflexCorners.add(points[i]);
+                    }
+                }
+            }
+        }
+
+//        float[][] tmp = new float[reflexCorners.size() + 2][reflexCorners.size() + 2];
+//        for (int i = 0; i < graph.length; i++) {
+//            for (int j = 0; j < graph.length; j++) {
+//                tmp[i][j] = graph[i][j];
+//            }
+//        }
+//        graph = tmp;
+//        int threadCount = Thread.activeCount();
+//        for (int i = cornerSize; i < reflexCorners.size() - 2; i++) {
+//            for (int j = 0; j < reflexCorners.size() - 2; j++) {
+//                final int k = i;
+//                final int l = j;
+//                Thread thread = new Thread(() -> {
+//                    if(!isObstacleBetween(reflexCorners.get(k), reflexCorners.get(l))) {
+//                        float distance = (float) reflexCorners.get(k).distance(reflexCorners.get(l));
+//                        if(!isStreamBetween(reflexCorners.get(k), reflexCorners.get(l)) && k - l < 4){
+//                            graph[k][l] = distance;
+//                            graph[l][k] = distance;
+//                        }else {
+//                            graph[k][l] = distance + 50000;   //Float.POSITIVE_INFINITY;
+//                            graph[l][k] = distance + 50000;   //Float.POSITIVE_INFINITY;
+//                        }
+//                    }
+//                });
+//                thread.start();
+//            }
+//        }
+//        while (Thread.activeCount() > threadCount){
+//            //System.out.println("Joining Threads");
+//        }
+    }
+
+
+    public void calcGraph(){
         int threadCount = Thread.activeCount();
         this.graph = new float[reflexCorners.size() + 2][reflexCorners.size() + 2];
         for (int i = 0; i < graph.length; i++) {
@@ -164,8 +225,13 @@ public class Graph {
                 Thread thread = new Thread(() -> {
                     if(!isObstacleBetween(reflexCorners.get(k), reflexCorners.get(l))) {
                         float distance = (float) reflexCorners.get(k).distance(reflexCorners.get(l));
-                        graph[k][l] = distance;
-                        graph[l][k] = distance;
+                        if(!isStreamBetween(reflexCorners.get(k), reflexCorners.get(l))){
+                            graph[k][l] = distance;
+                            graph[l][k] = distance;
+                        }else {
+                            graph[k][l] = distance + 50000;   //Float.POSITIVE_INFINITY;
+                            graph[l][k] = distance + 50000;   //Float.POSITIVE_INFINITY;
+                        }
                     }
                 });
                 thread.start();
@@ -194,6 +260,16 @@ public class Graph {
         return false;
     }
 
+    private boolean isStreamBetween(Point2D p1, Point2D p2){
+        Line2D line = new Line2D.Float((float) p1.getX(), (float) p1.getY(), (float) p2.getX(), (float) p2.getY());
+        for (Rectangle2D rect: streams) {
+            if (rect.intersectsLine(line)){
+                return true;
+            }
+        }
+        return false;
+    }
+
 
     public void addStartEnd(Point2D start, Point2D end){
         long time = System.currentTimeMillis();
@@ -203,8 +279,13 @@ public class Graph {
         int indexStartEnd = graph.length;
         if(!isObstacleBetween(start, end)){
             float distance = (float) start.distance(end);
-            graph[indexStartEnd-2][indexStartEnd-1] = distance;
-            graph[indexStartEnd-1][indexStartEnd-2] = distance;
+            if(!isStreamBetween(start, end)){
+                graph[indexStartEnd-2][indexStartEnd-1] = distance;
+                graph[indexStartEnd-1][indexStartEnd-2] = distance;
+            }else {
+                graph[indexStartEnd-2][indexStartEnd-1] = distance + 50000;  //Float.POSITIVE_INFINITY;
+                graph[indexStartEnd-1][indexStartEnd-2] = distance + 50000;  //Float.POSITIVE_INFINITY;
+            }
         }
 
         for (int i = 0; i < graph[i].length - 2; i++) {
@@ -212,8 +293,13 @@ public class Graph {
             Thread thread = new Thread(() -> {
                 if(!isObstacleBetween(start, reflexCorners.get(index))){
                     float distance = (float) start.distance(reflexCorners.get(index));
-                    graph[indexStartEnd-2][index] = distance;
-                    graph[index][indexStartEnd-2] = distance;
+                    if(!isStreamBetween(start, reflexCorners.get(index))){
+                        graph[indexStartEnd-2][index] = distance;
+                        graph[index][indexStartEnd-2] = distance;
+                    }else {
+                        graph[indexStartEnd-2][index] = distance + 50000;  //Float.POSITIVE_INFINITY;
+                        graph[index][indexStartEnd-2] = distance + 50000;  //Float.POSITIVE_INFINITY;
+                    }
                 }
             });
             thread.start();
@@ -252,7 +338,6 @@ public class Graph {
         this.indexEnd = - 1;
     }
 
-
     public void updateStartEnd(Point2D start, Point2D end){
         long time = System.currentTimeMillis();
         this.removeStartEnd();
@@ -265,7 +350,7 @@ public class Graph {
 
         Stack<Node> out = new Stack<>();
         List<Node> queue = new LinkedList<>();
-        queue.add(new Node(indexStart, null, 0, (float) reflexCorners.get(indexStart).distance(reflexCorners.get(indexEnd))));
+        queue.add(new Node(indexStart, reflexCorners.get(indexStart), null, 0, (float) reflexCorners.get(indexStart).distance(reflexCorners.get(indexEnd))));
         List<Node> visited = new LinkedList<>();
 
         while (!queue.isEmpty()){
@@ -281,7 +366,7 @@ public class Graph {
             for (int i = 0; i < reflexCorners.size(); i++) {
                 if (!visited.contains(current) && Float.isFinite(graph[current.index][i])) {
                     float cost = current.previous != null ? graph[current.index][i] + current.distanceToPrev : graph[current.index][i];
-                    Node n = new Node(i, current, cost, (float) reflexCorners.get(i).distance(reflexCorners.get(indexEnd)));
+                    Node n = new Node(i, reflexCorners.get(i), current, cost, (float) reflexCorners.get(i).distance(reflexCorners.get(indexEnd)));
                     if(visited.contains(n)) continue;
                     if(!queue.contains(n)) queue.add(n);
                     else {
@@ -300,14 +385,17 @@ public class Graph {
 
 
 
+
     public class Node {
-        public int index;
+        int index;
+        public Point2D point;
         public Node previous;
         public float distanceToPrev;
         public float distanceToEnd;
 
-        public Node(int index, Node previous, float distanceToPrev, float distanceToEnd){
+        public Node(int index, Point2D point, Node previous, float distanceToPrev, float distanceToEnd){
             this.index = index;
+            this.point = point;
             this.previous = previous;
             this.distanceToPrev = distanceToPrev;
             this.distanceToEnd = distanceToEnd;
@@ -319,19 +407,20 @@ public class Graph {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             Node node = (Node) o;
-            return index == node.index && distanceToEnd == node.distanceToEnd;
+            return point == node.point && distanceToEnd == node.distanceToEnd;
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(index, distanceToEnd);
+            return Objects.hash(point, distanceToEnd);
         }
 
         @Override
         public String toString() {
-            String prev = this.previous != null ? "" + previous.index : "null";
+            String prev = this.previous != null ? "" + previous.point : "null";
             return "Node{" +
                     "index=" + index +
+                    ", point=" + point +
                     ", previous=" + prev +
                     ", distanceToPrev=" + distanceToPrev +
                     ", distanceToEnd=" + distanceToEnd +
@@ -390,7 +479,7 @@ public class Graph {
             obstaclePoints.add(points);
         }
 
-        Graph graph = new Graph(obstacles, 1000, 1000);
+        Graph graph = new Graph(obstacles, 1000, 1000, new ArrayList<>());
         graph.graphTest();
     }
     private void graphTest(){
@@ -420,7 +509,7 @@ public class Graph {
         //graph.updateStartEnd(new Point2D.Float(150, 600), new Point2D.Float(950,200), obstacles);
         System.out.println(findPathAStar());
         Stack<Node> stack = findPathAStar();
-        stack.push(new Node(indexStart, null, 0,0));
+        stack.push(new Node(indexStart, reflexCorners.get(indexStart), null, 0,0));
 
         List<Point2D> s = new LinkedList<>();
         for (int i = 0; i < stack.size(); i++) {
